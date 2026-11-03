@@ -1,0 +1,29 @@
+{% macro avatar(acc, size="") -%}
+<span class="g-{{ acc.group }}" style="display:inline-flex">
+{%- if acc.profile_picture_url -%}
+<img class="avatar {{ size }}" src="{{ acc.profile_picture_url }}" alt="" referrerpolicy="no-referrer" loading="lazy"
+     onerror="this.outerHTML='<span class=&quot;avatar {{ size }}&quot;>{{ acc.username[0]|upper }}</span>'">
+{%- else -%}
+<span class="avatar {{ size }}">{{ acc.username[0]|upper }}</span>
+{%- endif -%}
+</span>
+{%- endmacro %}
+
+{% macro who(acc) -%}
+<a class="who" href="/hesap/{{ acc.id }}">{{ avatar(acc) }}<span><b>@{{ acc.username }}</b><br><span class="small muted">{{ acc.name or '' }}</span></span></a>
+{%- endmacro %}
+
+{% macro group_tag(g) -%}
+<span class="tag g-{{ g }}"><span class="swatch"></span>{{ GROUPS[g] }}</span>
+{%- endmacro %}
+
+{% macro delta(v, pct=None) -%}
+{%- if v is none -%}<span class="muted">—</span>
+{%- else -%}<span class="{{ 'up' if v > 0 else 'down' if v < 0 else 'muted' }}">{{ '▲' if v > 0 else '▼' if v < 0 else '' }} {{ v|signed }}{% if pct is not none %} <span class="small">({{ pct|signed(2) }}%)</span>{% endif %}</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro status_pill(acc) -%}
+{%- set cls = {'ok':'ok','bekliyor':'','isletme_degil':'warn','yapilandirma_eksik':'warn','baglanti_gerekli':'err','hata':'err'}[acc.status] or '' -%}
+<span class="pill {{ cls }}" title="{{ acc.last_error or '' }}">{{ acc.status_label }}</span>
+{%- endmacro %}

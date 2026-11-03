@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Instagram Takip{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/chart.umd.min.js" defer></script>
+<script src="/static/chartjs-adapter-date-fns.bundle.min.js" defer></script>
+<script src="/static/charts.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="/"><span class="brand-dot"></span>Instagram Takip</a>
+  <nav class="nav">
+    <a href="/" class="{{ 'on' if active_nav=='genel' }}">Genel bakış</a>
+    <a href="/icerikler" class="{{ 'on' if active_nav=='icerik' }}">İçerikler</a>
+    <a href="/karsilastir" class="{{ 'on' if active_nav=='karsilastir' }}">Karşılaştır</a>
+    <a href="/hesaplar" class="{{ 'on' if active_nav=='hesaplar' }}">Hesaplar</a>
+  </nav>
+  <a class="btn sm" href="/cikis">Çıkış</a>
+</div></header>
+<main>
+{% if flash %}<div class="flash {{ flash.kind }}">{{ flash.msg }}</div>{% endif %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import who, group_tag, status_pill %}
+{% block title %}Hesaplar · Instagram Takip{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Hesaplar</h1><div class="muted small">{{ accounts|length }} hesap · Veri kaynakları:
+    <span class="pill {{ 'ok' if settings.discovery_enabled else 'warn' }}">Meta API {{ 'açık' if settings.discovery_enabled else 'kapalı' }}</span>
+    <span class="pill {{ 'ok' if settings.oauth_enabled else 'warn' }}">Instagram bağlantısı {{ 'açık' if settings.oauth_enabled else 'kapalı' }}</span>
+    <span class="pill {{ 'ok' if settings.apify_enabled else '' }}">Apify {{ 'açık' if settings.apify_enabled else 'kapalı' }}</span></div></div>
+  <form method="post" action="/topla"><button class="btn" {{ 'disabled' if running }}>{{ 'Toplama çalışıyor…' if running else 'Tüm hesapları şimdi topla' }}</button></form>
+</div>
+
+<div class="grid g2" style="margin-bottom:16px">
+  <form class="card stack" method="post" action="/hesaplar/ekle">
+    <h2>Hesap ekle</h2>
+    <div><label>Kullanıcı adları veya profil linkleri (her satıra bir tane, ya da virgülle)</label>
+      <textarea name="usernames" required placeholder="kullaniciadi1&#10;@kullaniciadi2&#10;https://instagram.com/kullaniciadi3"></textarea></div>
+    <div><label>Grup</label><select name="group">{% for g, l in GROUPS.items() %}<option value="{{ g }}">{{ l }}</option>{% endfor %}</select></div>
+    <div><button class="btn primary">Ekle</button></div>
+  </form>
+  <div class="card stack">
+    <h2>Son toplamalar</h2>
+    {% for r in runs %}
+      <details><summary>{{ r.started_at|tarih('%d.%m %H:%M') }} · {{ r.trigger }} · {{ r.ok_count }} başarılı{% if r.error_count %}, {{ r.error_count }} sorunlu{% endif %}{% if not r.finished_at %} · sürüyor{% endif %}</summary>
+        <pre class="small muted" style="white-space:pre-wrap;margin:8px 0 0">{{ r.log or '—' }}</pre></details>
+    {% else %}<div class="muted">Henüz toplama yapılmadı.</div>{% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  {% if accounts %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Hesap</th><th>Grup</th><th>Kaynak</th><th>Bağlantı</th><th>Durum</th><th>Son toplama</th><th>Notlar</th><th></th></tr></thead>
+    <tbody>
+    {% for a in accounts %}
+      <tr style="{{ 'opacity:.5' if not a.active }}">
+        <td>{{ who(a) }}</td>
+        <td>{{ group_tag(a.group) }}{% if not a.active %} <span class="pill">pasif</span>{% endif %}</td>
+        <td class="small muted">{{ a.source_label }}</td>
+        <td>{% if a.is_connected %}<span class="pill ok">Bağlı</span>{% elif a.group != 'rakip' %}<a class="small" href="/hesap/{{ a.id }}#baglanti">Link al</a>{% else %}<span class="muted small">—</span>{% endif %}</td>
+        <td>{{ status_pill(a) }}{% if a.last_error %}<div class="small muted" style="max-width:240px">{{ a.last_error }}</div>{% endif %}</td>
+        <td class="small muted">{{ a.last_collected_at|tarih('%d.%m %H:%M') }}</td>
+        <td class="small muted" style="max-width:200px">{{ a.notes }}</td>
+        <td><form method="post" action="/hesaplar/{{ a.id }}/sil" onsubmit="return confirm('@{{ a.username }} ve tüm geçmiş verisi silinsin mi?')"><button class="btn sm danger">Sil</button></form></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<div class="empty">Henüz hesap eklenmedi.</div>{% endif %}
+</div>
+{% endblock %}

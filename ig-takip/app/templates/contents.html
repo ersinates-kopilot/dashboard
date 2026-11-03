@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import who, group_tag %}
+{% block title %}İçerikler · Instagram Takip{% endblock %}
+{% macro q(grup_=grup, gun_=gun, sirala_=sirala, tur_=tur) -%}
+?gun={{ gun_ }}&sirala={{ sirala_ }}{{ '&grup=' ~ grup_ if grup_ }}{{ '&tur=' ~ tur_ if tur_ }}
+{%- endmacro %}
+{% block content %}
+<div class="head">
+  <div><h1>İçerikler</h1><div class="muted small">Takip edilen tüm hesapların gönderileri. Etkileşim = (beğeni + yorum) / takipçi.</div></div>
+</div>
+<div class="filters" style="margin-bottom:16px">
+  <span class="seg"><a class="{{ 'on' if not grup }}" href="{{ q(grup_=None) }}">Tüm gruplar</a>{% for g, l in GROUPS.items() %}<a class="{{ 'on' if grup==g }}" href="{{ q(grup_=g) }}">{{ l }}</a>{% endfor %}</span>
+  <span class="seg">{% for d in [7, 30, 90] %}<a class="{{ 'on' if gun==d }}" href="{{ q(gun_=d) }}">{{ d }} gün</a>{% endfor %}</span>
+  <span class="seg"><a class="{{ 'on' if not tur }}" href="{{ q(tur_=None) }}">Hepsi</a><a class="{{ 'on' if tur=='reels' }}" href="{{ q(tur_='reels') }}">Reels</a><a class="{{ 'on' if tur=='gonderi' }}" href="{{ q(tur_='gonderi') }}">Gönderi</a></span>
+  <span class="seg">{% for v, l in [('er','Etkileşim'),('begeni','Beğeni'),('yorum','Yorum'),('izlenme','İzlenme'),('tarih','En yeni')] %}<a class="{{ 'on' if sirala==v }}" href="{{ q(sirala_=v) }}">{{ l }}</a>{% endfor %}</span>
+</div>
+<div class="card">
+  {% if posts %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Hesap</th><th>Grup</th><th>İçerik</th><th>Tür</th><th class="num">Beğeni</th><th class="num">Yorum</th><th class="num">İzlenme</th><th class="num">Etkileşim</th><th>Tarih</th></tr></thead>
+    <tbody>
+    {% for p in posts %}
+      <tr>
+        <td class="muted small">{{ loop.index }}</td>
+        <td>{{ who(p.account) }}</td>
+        <td>{{ group_tag(p.account.group) }}</td>
+        <td><a class="caption" style="display:block" href="{{ p.permalink }}" target="_blank" rel="noopener">{{ p.caption or '(açıklama yok)' }}</a></td>
+        <td><span class="pill">{{ p.kind_label }}</span></td>
+        <td class="num">{{ p.likes|num if p.likes is not none else 'gizli' }}</td>
+        <td class="num">{{ p.comments|num }}</td>
+        <td class="num">{{ p.views|num }}</td>
+        <td class="num"><b>{{ p.engagement_rate|pct }}</b></td>
+        <td class="small muted">{{ p.posted_at|tarih }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<div class="empty">Bu filtrelerle içerik bulunamadı.</div>{% endif %}
+</div>
+{% endblock %}

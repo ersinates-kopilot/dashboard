@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar, group_tag, delta, status_pill %}
+{% block title %}@{{ acc.username }} · Instagram Takip{% endblock %}
+{% block content %}
+<div class="head">
+  <div style="display:flex;gap:14px;align-items:center">
+    {{ avatar(acc, "lg") }}
+    <div>
+      <h1>@{{ acc.username }} <a class="small muted" href="https://www.instagram.com/{{ acc.username }}/" target="_blank" rel="noopener">Instagram'da aç ↗</a></h1>
+      <div class="filters small">{{ group_tag(acc.group) }} · {{ status_pill(acc) }} · <span class="muted">{{ acc.source_label }}</span>
+        {% if acc.last_collected_at %}<span class="muted">· Son güncelleme {{ acc.last_collected_at|tarih('%d.%m %H:%M') }}</span>{% endif %}</div>
+    </div>
+  </div>
+  <form method="post" action="/topla"><input type="hidden" name="account_id" value="{{ acc.id }}"><button class="btn">Bu hesabı şimdi topla</button></form>
+</div>
+
+{% if acc.last_error %}<div class="notice">{{ acc.last_error }}</div>{% endif %}
+
+<div class="grid g4" style="margin-bottom:16px">
+  <div class="card"><div class="stat-label">Takipçi</div><div class="stat-value">{{ s.followers|num }}</div>
+    <div class="stat-sub">7 gün: {{ delta(s.change_7d, s.change_7d_pct) }}</div></div>
+  <div class="card"><div class="stat-label">Ortalama etkileşim</div><div class="stat-value">{{ s.avg_er|pct }}</div>
+    <div class="stat-sub">Son 12 gönderi, (beğeni+yorum)/takipçi</div></div>
+  <div class="card"><div class="stat-label">Ortalama beğeni</div><div class="stat-value">{{ s.avg_likes|compact }}</div>
+    <div class="stat-sub">{% if s.avg_views %}Ort. izlenme {{ s.avg_views|compact }}{% else %}&nbsp;{% endif %}</div></div>
+  <div class="card"><div class="stat-label">{{ 'Ortalama erişim' if has_insights else 'Haftalık paylaşım' }}</div>
+    <div class="stat-value">{% if has_insights %}{{ s.avg_reach|compact }}{% else %}{{ s.posts_per_week|num(1) if s.posts_per_week is not none else '—' }}{% endif %}</div>
+    <div class="stat-sub">{% if has_insights %}Bağlı hesap istatistiği{% else %}Son 30 güne göre{% endif %}</div></div>
+</div>
+
+<div class="grid g2" style="margin-bottom:16px">
+  <div class="card"><h2>Takipçi sayısı</h2>
+    {% if chart.followers['values']|length > 1 %}<div class="chart-box"><canvas data-chart="line" data-json='{{ chart.followers|tojson }}' data-label="Takipçi"></canvas></div>
+    {% else %}<div class="empty">Grafik için en az iki günlük veri gerekiyor.</div>{% endif %}
+  </div>
+  <div class="card"><h2>Gönderi başına etkileşim (%)</h2>
+    {% if chart.er['values']|length %}<div class="chart-box"><canvas data-chart="bar" data-json='{{ chart.er|tojson }}' data-label="Etkileşim %"></canvas></div>
+    {% else %}<div class="empty">Henüz gönderi verisi yok.</div>{% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:16px">
+  <div class="head" style="margin-bottom:8px"><h2 style="margin:0">Gönderiler</h2>
+    <span class="seg">
+      {% for v, l in [('tarih','En yeni'),('er','Etkileşim'),('begeni','Beğeni'),('izlenme','İzlenme')] %}<a class="{{ 'on' if sirala==v }}" href="?sirala={{ v }}">{{ l }}</a>{% endfor %}
+    </span></div>
+  {% if posts %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Tarih</th><th>İçerik</th><th>Tür</th><th class="num">Beğeni</th><th class="num">Yorum</th><th class="num">İzlenme</th>
+      {% if has_insights %}<th class="num">Erişim</th><th class="num">Kaydetme</th><th class="num">Paylaşım</th>{% endif %}
+      <th class="num">Etkileşim</th><th class="num" title="Beğeninin hesabın medyan beğenisine oranı">Performans</th></tr></thead>
+    <tbody>
+    {% for p in posts %}{% set m = multiples[p.id] %}
+      <tr>
+        <td class="small muted">{{ p.posted_at|tarih }}</td>
+        <td><a class="caption" style="display:block" href="{{ p.permalink }}" target="_blank" rel="noopener">{{ p.caption or '(açıklama yok)' }}</a></td>
+        <td><span class="pill">{{ p.kind_label }}</span></td>
+        <td class="num">{{ p.likes|num if p.likes is not none else 'gizli' }}</td>
+        <td class="num">{{ p.comments|num }}</td>
+        <td class="num">{{ p.views|num }}</td>
+        {% if has_insights %}<td class="num">{{ p.reach|num }}</td><td class="num">{{ p.saved|num }}</td><td class="num">{{ p.shares|num }}</td>{% endif %}
+        <td class="num"><b>{{ p.engagement_rate|pct }}</b></td>
+        <td class="num">{% if m is not none %}<span class="pill {{ 'ok' if m >= 2 }}">{{ m|num(1) }}×</span>{% else %}—{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<div class="empty">Henüz gönderi yok.</div>{% endif %}
+</div>
+
+<div class="grid g2">
+  <div class="card stack">
+    <h2>Hesap ayarları</h2>
+    <form method="post" action="/hesaplar/{{ acc.id }}/guncelle" class="stack">
+      <div><label>Grup</label><select name="group">{% for g, l in GROUPS.items() %}<option value="{{ g }}" {{ 'selected' if acc.group==g }}>{{ l }}</option>{% endfor %}</select></div>
+      <div><label>Notlar</label><textarea name="notes" placeholder="Örn. kampanya dönemi, sözleşme bilgisi">{{ acc.notes }}</textarea></div>
+      <label style="display:flex;gap:8px;align-items:center;color:var(--text)"><input type="checkbox" name="active" {{ 'checked' if acc.active }}> Takip aktif</label>
+      <div><button class="btn primary">Kaydet</button></div>
+    </form>
+  </div>
+  <div class="card stack" id="baglanti">
+    <h2>Instagram bağlantısı</h2>
+    {% if acc.is_connected %}
+      <div><span class="pill ok">Bağlı</span> <span class="small muted">{{ acc.oauth_connected_at|tarih }} tarihinden beri · token {{ acc.oauth_token_expires_at|tarih }} tarihine kadar geçerli, otomatik yenilenir</span></div>
+      <form method="post" action="/hesaplar/{{ acc.id }}/baglanti-kaldir" onsubmit="return confirm('Bağlantı kaldırılsın mı?')"><button class="btn danger sm">Bağlantıyı kaldır</button></form>
+    {% else %}
+      <div class="small muted">Hesap sahibi bu linkten bir kez izin verirse erişim, kaydetme, paylaşım ve izlenme istatistikleri de toplanır. Hesap İşletme veya İçerik Üreticisi hesabı olmalı.</div>
+      <div class="copy"><input type="text" readonly value="{{ connect_url }}" onclick="this.select()"><button class="btn sm" type="button" onclick="navigator.clipboard.writeText('{{ connect_url }}');this.textContent='Kopyalandı'">Kopyala</button></div>
+      {% if not settings.oauth_enabled %}<div class="small" style="color:var(--warn-ink)">Not: IG_APP_ID ve IG_APP_SECRET girilmeden link çalışmaz.</div>{% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giriş · Instagram Takip</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="center-page"><div class="card stack">
+  <div><h1>Instagram Takip</h1><div class="muted">Devam etmek için şifrenizi girin.</div></div>
+  {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.msg }}</div>{% endif %}
+  <form method="post" action="/giris" class="stack">
+    <input type="hidden" name="next" value="{{ next }}">
+    <div><label for="pw">Şifre</label><input id="pw" type="password" name="password" autofocus required></div>
+    <button class="btn primary" type="submit">Giriş yap</button>
+  </form>
+</div></div></body></html>

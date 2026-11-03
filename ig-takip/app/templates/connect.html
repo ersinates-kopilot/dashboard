@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instagram hesabını bağla</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="center-page"><div class="card stack">
+  {% if success %}
+    <h1>Teşekkürler!</h1>
+    <p>@{{ acc.username }} hesabı başarıyla bağlandı. Bu sayfayı kapatabilirsiniz.</p>
+  {% elif error %}
+    <h1>Bağlantı kurulamadı</h1>
+    <p class="muted">{{ error }}</p>
+    {% if acc and auth_url is defined and auth_url %}<a class="btn primary" href="{{ auth_url }}">Tekrar dene</a>{% elif acc %}<a class="btn" href="/baglan/{{ acc.connect_token }}">Tekrar dene</a>{% endif %}
+  {% else %}
+    <h1>@{{ acc.username }} hesabını bağlayın</h1>
+    <p class="muted">Bu izinle içeriklerinizin performansı (erişim, kaydetme, paylaşım, izlenme) ekibimizin raporlarına otomatik eklenir.
+      Şifreniz bizimle paylaşılmaz; izni istediğiniz zaman Instagram ayarlarından kaldırabilirsiniz.</p>
+    <ul class="small muted">
+      <li>Hesabınız İşletme veya İçerik Üreticisi hesabı olmalı.</li>
+      <li>Instagram'da <b>@{{ acc.username }}</b> hesabıyla giriş yaptığınızdan emin olun.</li>
+    </ul>
+    <a class="btn primary" href="{{ auth_url }}">Instagram ile bağlan</a>
+  {% endif %}
+</div></div></body></html>

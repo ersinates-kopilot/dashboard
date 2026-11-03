@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_macros.html" import who, group_tag, delta, status_pill, avatar %}
+{% block content %}
+<div class="head">
+  <div>
+    <h1>Genel bakış</h1>
+    <div class="muted small">
+      {% if last_run %}Son veri toplama: {{ last_run.started_at|tarih('%d.%m.%Y %H:%M') }} · {{ last_run.ok_count }} başarılı{% if last_run.error_count %}, {{ last_run.error_count }} sorunlu{% endif %}
+      {% else %}Henüz veri toplanmadı{% endif %}
+      · Otomatik toplama her gün {{ '%02d:%02d'|format(settings.collect_hour, settings.collect_minute) }}
+    </div>
+  </div>
+  <form method="post" action="/topla"><button class="btn" type="submit">Şimdi topla</button></form>
+</div>
+
+{% if problems %}
+<div class="notice">{{ problems|length }} hesapta sorun var:
+  {% for a in problems[:6] %}<a href="/hesap/{{ a.id }}">@{{ a.username }}</a> ({{ a.status_label|lower }}){{ ', ' if not loop.last }}{% endfor %}{% if problems|length > 6 %} ve {{ problems|length - 6 }} hesap daha{% endif %}.
+  <a href="/hesaplar">Hesaplara git</a>
+</div>
+{% endif %}
+
+<div class="grid g3" style="margin-bottom:16px">
+{% for g, label in GROUPS.items() %}{% set st = stats[g] %}
+  <a class="card group-card g-{{ g }}" href="/?grup={{ g }}" style="text-decoration:none">
+    <div class="stat-label"><span class="swatch"></span>{{ label }}</div>
+    <div class="stat-value">{{ st.count }} <span class="small muted" style="font-weight:400">hesap</span></div>
+    <div class="row small"><span class="muted">Toplam takipçi</span><span>{{ st.followers_total|compact }}</span></div>
+    <div class="row small"><span class="muted">Medyan etkileşim</span><span>{{ st.median_er|pct }}</span></div>
+    <div class="row small"><span class="muted">Haftalık paylaşım (ort.)</span><span>{{ st.avg_ppw|num(1) if st.avg_ppw is not none else '—' }}</span></div>
+  </a>
+{% endfor %}
+</div>
+
+<div class="card" style="margin-bottom:16px">
+  <div class="head" style="margin-bottom:8px">
+    <h2 style="margin:0">Hesaplar</h2>
+    <span class="seg">
+      <a class="{{ 'on' if not grup }}" href="/">Tümü</a>
+      {% for g, label in GROUPS.items() %}<a class="{{ 'on' if grup==g }}" href="/?grup={{ g }}">{{ label }}</a>{% endfor %}
+    </span>
+  </div>
+  {% if rows %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Hesap</th><th>Grup</th><th class="num">Takipçi</th><th class="num">7 gün</th><th class="num">30 gün</th>
+      <th class="num" title="Son 12 gönderinin (beğeni+yorum)/takipçi ortalaması">Etkileşim</th><th class="num">Ort. beğeni</th>
+      <th class="num">Paylaşım/hafta</th><th>Son paylaşım</th><th>Durum</th></tr></thead>
+    <tbody>
+    {% for s in rows %}
+      <tr>
+        <td>{{ who(s.account) }}</td>
+        <td>{{ group_tag(s.account.group) }}</td>
+        <td class="num">{{ s.followers|num }}</td>
+        <td class="num">{{ delta(s.change_7d, s.change_7d_pct) }}</td>
+        <td class="num">{{ delta(s.change_30d) }}</td>
+        <td class="num">{{ s.avg_er|pct }}</td>
+        <td class="num">{{ s.avg_likes|compact }}</td>
+        <td class="num">{{ s.posts_per_week|num(1) if s.posts_per_week is not none else '—' }}</td>
+        <td class="small muted">{{ s.last_post_at|ago }}</td>
+        <td>{{ status_pill(s.account) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <div class="empty">Henüz hesap yok. <a href="/hesaplar">Hesap ekleyerek başlayın.</a></div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="head" style="margin-bottom:8px">
+    <h2 style="margin:0">Son 7 günün öne çıkan içerikleri</h2>
+    <a class="small" href="/icerikler?gun=7{{ '&grup=' ~ grup if grup }}">Tümünü gör →</a>
+  </div>
+  {% if top_posts %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Hesap</th><th>İçerik</th><th>Tür</th><th class="num">Beğeni</th><th class="num">Yorum</th><th class="num">Etkileşim</th><th>Tarih</th></tr></thead>
+    <tbody>
+    {% for p in top_posts %}
+      <tr>
+        <td>{{ who(p.account) }}</td>
+        <td><a class="caption" style="display:block" href="{{ p.permalink }}" target="_blank" rel="noopener">{{ p.caption or '(açıklama yok)' }}</a></td>
+        <td><span class="pill">{{ p.kind_label }}</span></td>
+        <td class="num">{{ p.likes|num }}</td>
+        <td class="num">{{ p.comments|num }}</td>
+        <td class="num"><b>{{ p.engagement_rate|pct }}</b></td>
+        <td class="small muted">{{ p.posted_at|tarih }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<div class="empty">Son 7 günde içerik bulunamadı.</div>{% endif %}
+</div>
+{% endblock %}

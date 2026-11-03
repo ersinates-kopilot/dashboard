@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import who, group_tag, delta %}
+{% block title %}Karşılaştır · Instagram Takip{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Karşılaştır</h1><div class="muted small">En fazla 8 hesap seçin. Takipçi büyümesi, başlangıç gününe göre yüzde değişim olarak gösterilir; böylece büyük ve küçük hesaplar aynı ölçekte karşılaştırılır.</div></div></div>
+
+<form class="card stack" method="get" action="/karsilastir" id="cmpform" style="margin-bottom:16px">
+  <div class="check-list">
+  {% for a in all_accounts %}
+    <label class="g-{{ a.group }}"><input type="checkbox" value="{{ a.id }}" {{ 'checked' if a.id in selected_ids }}><span class="swatch"></span>@{{ a.username }}</label>
+  {% endfor %}
+  </div>
+  <input type="hidden" name="ids" id="ids" value="{{ selected_ids|join(',') }}">
+  <div class="filters">
+    <select name="gun" style="width:auto">{% for d in [30, 90, 180] %}<option value="{{ d }}" {{ 'selected' if gun==d }}>Son {{ d }} gün</option>{% endfor %}</select>
+    <button class="btn primary">Karşılaştır</button>
+  </div>
+</form>
+<script>
+document.getElementById('cmpform').addEventListener('submit', function () {
+  const ids = [...this.querySelectorAll('.check-list input:checked')].map(i => i.value).slice(0, 8);
+  document.getElementById('ids').value = ids.join(',');
+});
+</script>
+
+{% if selected %}
+<div class="card" style="margin-bottom:16px">
+  <h2>Takipçi büyümesi (%)</h2>
+  <div class="chart-box" style="height:320px"><canvas data-chart="multi" data-json='{{ series|tojson }}'></canvas></div>
+</div>
+<div class="card">
+  <div class="table-wrap"><table>
+    <thead><tr><th>Hesap</th><th>Grup</th><th class="num">Takipçi</th><th class="num">7 gün</th><th class="num">30 gün</th><th class="num">Etkileşim</th><th class="num">Ort. beğeni</th><th class="num">Ort. izlenme</th><th class="num">Paylaşım/hafta</th></tr></thead>
+    <tbody>{% for s in summaries %}
+      <tr><td>{{ who(s.account) }}</td><td>{{ group_tag(s.account.group) }}</td><td class="num">{{ s.followers|num }}</td>
+        <td class="num">{{ delta(s.change_7d, s.change_7d_pct) }}</td><td class="num">{{ delta(s.change_30d) }}</td>
+        <td class="num"><b>{{ s.avg_er|pct }}</b></td><td class="num">{{ s.avg_likes|compact }}</td><td class="num">{{ s.avg_views|compact }}</td>
+        <td class="num">{{ s.posts_per_week|num(1) if s.posts_per_week is not none else '—' }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+</div>
+{% else %}
+<div class="card empty">Karşılaştırmak için yukarıdan hesap seçin.</div>
+{% endif %}
+{% endblock %}
